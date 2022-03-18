@@ -30,6 +30,7 @@ class CC_RRT_Star:
         self.found = False
 
         self.goal_threshold = 10
+        self.probability_threshold = 0
 
 
     def init_map(self):
@@ -39,6 +40,9 @@ class CC_RRT_Star:
         self.vertices = []
         self.vertices.append(self.start)
     
+
+    def setProbabilityThreshold(self, probability_threshold):
+        self.probability_threshold = probability_threshold
 
     def setObstacleSource(self, obstacles):
         # obstacles should be a class that contains a getPDF(x, y, t) method
@@ -56,7 +60,7 @@ class CC_RRT_Star:
         return math.hypot(node2.row - node1.row, node2.col - node1.col)
     
 
-    def line_crosses_obstacles(self, node1: Node, node2: Node) -> bool:
+    def line_crosses_map_obstacles(self, node1: Node, node2: Node) -> bool:
         '''Check if the path between two nodes collide with obstacles
         arguments:
             node1 - node 1
@@ -70,6 +74,19 @@ class CC_RRT_Star:
             row = round(node1.row + (step/steps) * (node2.row-node1.row))
             col = round(node1.col + (step/steps) * (node2.col-node1.col))
             if self.map_array[row, col] == 0:
+                return True
+        return False
+
+
+    def line_crosses_moving_obstacles(self, node1: Node, node2: Node) -> bool:
+        steps = int(self.distance(node1, node2) * 2)
+        for step in range(0, steps):
+            temp_node = Node(
+                round(node1.row + (step/steps) * (node2.row-node1.row)),
+                round(node1.col + (step/steps) * (node2.col-node1.col)))
+            t = node1.cost + self.distance(node1, temp_node)
+            pdf = self.obstacles.getPDF(temp_node.col, temp_node.row, t)
+            if pdf > self.probability_threshold:
                 return True
         return False
 
@@ -134,9 +151,10 @@ class CC_RRT_Star:
         '''
         for node in neighbors:
             if node.cost < new_node.parent.cost:
-                if not self.line_crosses_obstacles(node, new_node):
-                    new_node.parent = node
-                    new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
+                if not self.line_crosses_map_obstacles(node, new_node):
+                    if not self.line_crosses_moving_obstacles(node, new_node):
+                        new_node.parent = node
+                        new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
 
     
     def draw_map(self):
@@ -168,7 +186,7 @@ class CC_RRT_Star:
         plt.show()
 
 
-    def CC_RRT_star(self, n_pts=1000, neighbor_size=20):
+    def CC_RRT_star(self, neighbor_size=20):
         '''RRT* search function
         arguments:
             n_pts - number of points try to sample, 
@@ -184,10 +202,10 @@ class CC_RRT_Star:
         # extend the node and check collision to decide whether to add or drop,
         # if added, rewire the node and its neighbors,
         # and check if reach the neighbor region of the goal if the path is not found.
-        for step in range(0, n_pts):
-            new_node = self.get_new_point(0)
-            nearest_node = self.get_nearest_node(new_node)
-            if not self.line_crosses_obstacles(new_node, nearest_node):
+        new_node = self.get_new_point(0)
+        nearest_node = self.get_nearest_node(new_node)
+        if not self.line_crosses_map_obstacles(new_node, nearest_node):
+            if not self.line_crosses_moving_obstacles(new_node, nearest_node):
                 new_node.parent = nearest_node
                 new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
                 self.vertices.append(new_node)
@@ -197,6 +215,7 @@ class CC_RRT_Star:
                     self.found = True
                     self.goal.parent = new_node.parent
                     self.goal.cost = new_node.cost
+
 
     def print_conclusion(self):
         # Output

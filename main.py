@@ -38,25 +38,26 @@ if __name__ == "__main__":
     # Planning class
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
+    CC_RRT_planner.setProbabilityThreshold(0.5)
 
     # Obstacle data
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(10, 50)
     Obstacle_info.setMaxVelocity(10)
-    Obstacle_info.generateObstacles(5)
+    Obstacle_info.generateObstacles(1)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # TEST CODE
-    print(Obstacle_info.getPDF(10, 10, 0))
-    print(Obstacle_info.getPDF(10, 10, 1))
-    print(Obstacle_info.getPDF(20, 10, 0))
-    sys.exit()
+    # print(Obstacle_info.getPDF(10, 10, 0))
+    # print(Obstacle_info.getPDF(10, 10, 1))
+    # print(Obstacle_info.getPDF(20, 10, 0))
+    # sys.exit()
 
     # Do search
-    iterations = 1000
+    iterations = 100
     for i in range(0, iterations):
-        CC_RRT_planner.CC_RRT_star(n_pts=1)
+        CC_RRT_planner.CC_RRT_star()
 
     # Print results
     CC_RRT_planner.print_conclusion()
