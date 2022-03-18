@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # Planning class
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
-    CC_RRT_planner.setProbabilityThreshold(0.5)
+    CC_RRT_planner.setProbabilityThreshold(0.001)
 
     # Obstacle data
     Obstacle_info = Obstacles()
@@ -52,8 +52,11 @@ if __name__ == "__main__":
     # print(Obstacle_info.getPDF(10, 10, 0))
     # print(Obstacle_info.getPDF(10, 10, 1))
     # print(Obstacle_info.getPDF(20, 10, 0))
-    Obstacle_info.draw_map(100, 100, 0)
-    sys.exit()
+    # Obstacle_info.draw_map(100, 100, 0)
+    # Obstacle_info.draw_map(100, 100, 2)
+    # Obstacle_info.draw_map(100, 100, 4)
+    # Obstacle_info.draw_map(100, 100, 6)
+    # Obstacle_info.draw_map(100, 100, 8)
 
     # Do search
     iterations = 100

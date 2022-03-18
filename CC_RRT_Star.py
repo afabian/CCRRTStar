@@ -61,6 +61,7 @@ class CC_RRT_Star:
     
 
     def line_crosses_map_obstacles(self, node1: Node, node2: Node) -> bool:
+        return False
         '''Check if the path between two nodes collide with obstacles
         arguments:
             node1 - node 1
