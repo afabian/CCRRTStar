@@ -159,6 +159,16 @@ class CC_RRT_Star:
 
     
     def draw_map(self, t):
+        plt = self.get_map(t)
+        plt.show()
+
+
+    def save_map(self, t, filename, dpi):
+        plt = self.get_map(t)
+        plt.savefig(filename, dpi=dpi)
+
+
+    def get_map(self, t):
         '''Visualization of the result
         '''
         # Create empty map
@@ -168,7 +178,7 @@ class CC_RRT_Star:
         imgfixed = 255 * np.dstack((self.map_array, self.map_array, self.map_array))
 
         # Map of the moving probabilistic obstacles
-        imgpdf = self.obstacles.get_pdf_map(100, 100, t)
+        imgpdf = self.obstacles.get_pdf_map(80, 80, t)
         imgpdf = scipy.ndimage.zoom(imgpdf, len(imgfixed) / len(imgpdf), order=3)
 
         # Merge and show the two maps
@@ -184,28 +194,55 @@ class CC_RRT_Star:
             img.append(imgx)
 
         ax.imshow(img)
-        # ax.imshow(imgpdf)
-        # ax.imshow(imgfixed, alpha=0.5)
 
-        # Draw Trees or Sample points
-        for node in self.vertices[1:-1]:
-            plt.plot(node.col, node.row, markersize=3, marker='o', color='w')
-            plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='w', linewidth=1)
+        # Draw Trees or Sample points, if this is a static-time image
+        if t == 0:
+            for node in self.vertices[1:-1]:
+                plt.plot(node.col, node.row, markersize=3, marker='o', color='w')
+                plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='w', linewidth=1)
         
-        # Draw Final Path if found
-        if self.found:
-            cur = self.goal
-            while cur.col != self.start.col and cur.row != self.start.row:
-                plt.plot([cur.col, cur.parent.col], [cur.row, cur.parent.row], color='g', linewidth=3)
-                cur = cur.parent
-                plt.plot(cur.col, cur.row, markersize=3, marker='o', color='g')
+        # Draw Final Path if found, if this is a static-time image
+        if t == 0:
+            if self.found:
+                cur = self.goal
+                while cur.col != self.start.col and cur.row != self.start.row:
+                    plt.plot([cur.col, cur.parent.col], [cur.row, cur.parent.row], color='g', linewidth=3)
+                    cur = cur.parent
+                    plt.plot(cur.col, cur.row, markersize=3, marker='o', color='g')
+
+        # Draw the current point if this is a specific-time image
+        if t != 0:
+            point_at_time = self.get_point_at_time(t)
+            plt.plot(point_at_time.col, point_at_time.row, markersize=10, marker='o', color='w')    
 
         # Draw start and goal
         plt.plot(self.start.col, self.start.row, markersize=5, marker='o', color='g')
         plt.plot(self.goal.col, self.goal.row, markersize=5, marker='o', color='r')
 
-        # show image
-        plt.show()
+        return plt
+
+
+    def get_point_at_time(self, t):
+        path = []
+        cur = self.goal
+        path.append(cur)
+        while cur.col != self.start.col and cur.row != self.start.row:
+            cur = cur.parent
+            path.append(cur)
+        path.reverse()
+
+        distance = 0
+        for i in range(0, len(path)-1):
+            distance_to_next = self.distance(path[i], path[i+1])
+            if distance + distance_to_next > t:
+                interp_position = (t - distance) / distance_to_next
+                node = Node(
+                    path[i].row * (1 - interp_position) + path[i+1].row * interp_position,
+                    path[i].col * (1 - interp_position) + path[i+1].col * interp_position)
+                return node
+            else:
+                distance += distance_to_next
+        return self.goal
 
 
     def CC_RRT_star(self, neighbor_size=20):
