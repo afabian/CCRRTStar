@@ -32,7 +32,7 @@ def load_map(file_path, resolution_scale):
 if __name__ == "__main__":
 
     # seed the RNG so that results are repeatable
-    random.seed(5)
+    random.seed(2)
 
     # Load the map
     start = (250, 50)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
     Obstacle_info.setMaxVelocity(1)
-    Obstacle_info.generateObstacles(10)
+    Obstacle_info.generateObstacles(20)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # Do first couple of frames, and then print results
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     CC_RRT_planner.draw_map(0)
 
     # Do the normal bunch of iterations
-    iterations = 800
+    iterations = 1000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
 

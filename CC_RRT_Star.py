@@ -166,6 +166,7 @@ class CC_RRT_Star:
     def save_map(self, t, filename, dpi):
         plt = self.get_map(t)
         plt.savefig(filename, dpi=dpi)
+        plt.close('all')
 
 
     def get_map(self, t):
