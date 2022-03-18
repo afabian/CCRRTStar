@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 from CC_RRT_Star import CC_RRT_Star
 from Obstacles import Obstacles
-
+import sys
 import matplotlib.pyplot as plt
 
 
@@ -46,6 +46,12 @@ if __name__ == "__main__":
     Obstacle_info.setMaxVelocity(10)
     Obstacle_info.generateObstacles(5)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
+
+    # TEST CODE
+    print(Obstacle_info.getPDF(10, 10, 0))
+    print(Obstacle_info.getPDF(10, 10, 1))
+    print(Obstacle_info.getPDF(20, 10, 0))
+    sys.exit()
 
     # Do search
     iterations = 1000

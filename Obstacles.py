@@ -64,6 +64,9 @@ class Obstacles:
     def getPDF(self, col, row, t) -> float:
         pdfsum = 0
         for obstacle in self.obstacles:
-            pdf = scipy.stats.norm(obstacle.p_col, obstacle.s_col).pdf(col)
+            p_row_at_t = obstacle.p_row + obstacle.v_row * t
+            p_col_at_t = obstacle.p_col + obstacle.v_col * t
+            # This is the wrong PDF - we need a 2-dimensional version!
+            pdf = scipy.stats.norm(p_col_at_t, obstacle.s_col).pdf(col)
             pdfsum += pdf
         return pdfsum
