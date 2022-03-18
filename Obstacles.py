@@ -62,10 +62,9 @@ class Obstacles:
         return output
 
     def paper_pdf(self, cov, pos, expect):
-        numerator = np.exp(-1/2 * np.matmul(np.matmul(np.transpose((pos-expect)), np.linalg.inv(cov)), (pos-expect)))
+        numerator = np.exp(-1/2 * np.matmul(np.matmul(np.transpose((pos-expect)), np.linalg.inv(cov)), (pos-expect)))[0][0]
         denominator = (2 * np.pi) * (float(np.linalg.det(cov))**0.5)
         result = numerator/denominator
-        result = result[0][0]
         return result
 
     def getPDF(self, col, row, t) -> float:
@@ -74,22 +73,25 @@ class Obstacles:
             p_row_at_t = obstacle.p_row + obstacle.v_row * t
             p_col_at_t = obstacle.p_col + obstacle.v_col * t
             cov = np.array([[obstacle.s_col,0],[0,obstacle.s_row]])
-            expect = np.transpose(np.array([[p_col_at_t, p_row_at_t]]))
-            pos = np.transpose(np.array([[col, row]]))
+            expect = np.array([[p_col_at_t], [p_row_at_t]])
+            pos = np.array([[col], [row]])
             pdf = self.paper_pdf(cov, pos, expect) 
             pdfsum += pdf
         return pdfsum
 
-    def draw_map(self, col_resolution, row_resolution, t):
+    def get_pdf_map(self, col_resolution, row_resolution, t):
         img = []
         for col_index in range(0, col_resolution):
             col = col_index / col_resolution * self.map_size_col
             img_col = []
             for row_index in range(0, row_resolution):
                 row = row_index / row_resolution * self.map_size_row
-                img_col.append(self.getPDF(col, row, t))
+                img_col.append(self.getPDF(row, col, t))
             img.append(img_col)
+        return img
 
+    def draw_pdf_map(self, col_resolution, row_resolution, t):
+        img = self.get_pdf_map()
         fig, ax = plt.subplots(1)
         ax.imshow(img)
         plt.show()

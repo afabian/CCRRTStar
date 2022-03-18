@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import random
+import scipy
 
 # Class for each tree node
 class Node:
@@ -61,7 +62,6 @@ class CC_RRT_Star:
     
 
     def line_crosses_map_obstacles(self, node1: Node, node2: Node) -> bool:
-        return False
         '''Check if the path between two nodes collide with obstacles
         arguments:
             node1 - node 1
@@ -158,26 +158,47 @@ class CC_RRT_Star:
                         new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
 
     
-    def draw_map(self):
+    def draw_map(self, t):
         '''Visualization of the result
         '''
         # Create empty map
         fig, ax = plt.subplots(1)
-        img = 255 * np.dstack((self.map_array, self.map_array, self.map_array))
+
+        # Map of the fixed obstacles
+        imgfixed = 255 * np.dstack((self.map_array, self.map_array, self.map_array))
+
+        # Map of the moving probabilistic obstacles
+        imgpdf = self.obstacles.get_pdf_map(100, 100, t)
+        imgpdf = scipy.ndimage.zoom(imgpdf, len(imgfixed) / len(imgpdf), order=3)
+
+        # Merge and show the two maps
+        maxpdf = np.amax(imgpdf)
+        img = []
+        for x in range(0, len(imgpdf)):
+            imgx = []
+            for y in range(0, len(imgpdf[0])):
+                if imgfixed[x][y][0] == 0:
+                    imgx.append(maxpdf)
+                else:
+                    imgx.append(imgpdf[x][y])
+            img.append(imgx)
+
         ax.imshow(img)
+        # ax.imshow(imgpdf)
+        # ax.imshow(imgfixed, alpha=0.5)
 
         # Draw Trees or Sample points
         for node in self.vertices[1:-1]:
-            plt.plot(node.col, node.row, markersize=3, marker='o', color='y')
-            plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='y')
+            plt.plot(node.col, node.row, markersize=3, marker='o', color='w')
+            plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='w', linewidth=1)
         
         # Draw Final Path if found
         if self.found:
             cur = self.goal
             while cur.col != self.start.col and cur.row != self.start.row:
-                plt.plot([cur.col, cur.parent.col], [cur.row, cur.parent.row], color='b')
+                plt.plot([cur.col, cur.parent.col], [cur.row, cur.parent.row], color='g', linewidth=3)
                 cur = cur.parent
-                plt.plot(cur.col, cur.row, markersize=3, marker='o', color='b')
+                plt.plot(cur.col, cur.row, markersize=3, marker='o', color='g')
 
         # Draw start and goal
         plt.plot(self.start.col, self.start.row, markersize=5, marker='o', color='g')

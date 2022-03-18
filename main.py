@@ -6,7 +6,7 @@ from CC_RRT_Star import CC_RRT_Star
 from Obstacles import Obstacles
 import sys
 import matplotlib.pyplot as plt
-
+import random
 
 def load_map(file_path, resolution_scale):
     ''' Load map from an image and return a 2D binary numpy array
@@ -30,39 +30,40 @@ def load_map(file_path, resolution_scale):
 
 
 if __name__ == "__main__":
+
+    # seed the RNG so that results are repeatable
+    random.seed(5)
+
     # Load the map
-    start = (200, 75)
+    start = (250, 50)
     goal  = (30, 250)
-    map_array = load_map("WPI_map.jpg", 0.3)
+    map_array = load_map("two_rooms.jpg", 0.3)
 
     # Planning class
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
-    CC_RRT_planner.setProbabilityThreshold(0.001)
+    CC_RRT_planner.setProbabilityThreshold(0.0001)
 
     # Obstacle data
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
-    Obstacle_info.setMaxVelocity(10)
-    Obstacle_info.generateObstacles(20)
+    Obstacle_info.setMaxVelocity(0)
+    Obstacle_info.generateObstacles(10)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
-    # TEST CODE
-    # print(Obstacle_info.getPDF(10, 10, 0))
-    # print(Obstacle_info.getPDF(10, 10, 1))
-    # print(Obstacle_info.getPDF(20, 10, 0))
-    # Obstacle_info.draw_map(100, 100, 0)
-    # Obstacle_info.draw_map(100, 100, 2)
-    # Obstacle_info.draw_map(100, 100, 4)
-    # Obstacle_info.draw_map(100, 100, 6)
-    # Obstacle_info.draw_map(100, 100, 8)
+    # Do first couple of frames, and then print results
+    # This lets us abort early if the map is badly set up
+    iterations = 2
+    for i in range(0, iterations):
+        CC_RRT_planner.CC_RRT_star()
+    CC_RRT_planner.draw_map(0)
 
-    # Do search
-    iterations = 100
+    # Do the normal bunch of iterations
+    iterations = 1000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
 
     # Print results
     CC_RRT_planner.print_conclusion()
-    CC_RRT_planner.draw_map()
+    CC_RRT_planner.draw_map(0)
