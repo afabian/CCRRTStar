@@ -79,7 +79,7 @@ class CC_RRT_Star:
 
 
     def line_crosses_moving_obstacles(self, node1: Node, node2: Node) -> bool:
-        steps = int(self.distance(node1, node2) * 2)
+        steps = int(self.distance(node1, node2) * 1)
         for step in range(0, steps):
             temp_node = Node(
                 round(node1.row + (step/steps) * (node2.row-node1.row)),

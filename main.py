@@ -43,16 +43,17 @@ if __name__ == "__main__":
     # Obstacle data
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
-    Obstacle_info.setObstacleSize(10, 50)
+    Obstacle_info.setObstacleSize(100, 100)
     Obstacle_info.setMaxVelocity(10)
-    Obstacle_info.generateObstacles(1)
+    Obstacle_info.generateObstacles(20)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # TEST CODE
     # print(Obstacle_info.getPDF(10, 10, 0))
     # print(Obstacle_info.getPDF(10, 10, 1))
     # print(Obstacle_info.getPDF(20, 10, 0))
-    # sys.exit()
+    Obstacle_info.draw_map(100, 100, 0)
+    sys.exit()
 
     # Do search
     iterations = 100

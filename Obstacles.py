@@ -44,18 +44,12 @@ class Obstacles:
         self.obstacles = []
         for i in range(0, self.n_obstacles):
             obstacle = Obstacle()
-            # obstacle.p_row = random.randrange(0, self.map_size_col)
-            # obstacle.p_col = random.randrange(0, self.map_size_row)
-            # obstacle.v_row = (random.random() * 2 - 1) * self.max_velocity
-            # obstacle.v_col = (random.random() * 2 - 1) * self.max_velocity
-            # obstacle.s_row = random.random() * self.obstacle_size_col
-            # obstacle.s_col = random.random() * self.obstacle_size_row
-            obstacle.p_row = 10
-            obstacle.p_col = 10
-            obstacle.v_row = 0
-            obstacle.v_col = 0
-            obstacle.s_col = 0.1
-            obstacle.s_row = 0.1
+            obstacle.p_row = random.randrange(0, self.map_size_col)
+            obstacle.p_col = random.randrange(0, self.map_size_row)
+            obstacle.v_row = (random.random() * 2 - 1) * self.max_velocity
+            obstacle.v_col = (random.random() * 2 - 1) * self.max_velocity
+            obstacle.s_row = (random.random() * 0.8 + 0.2) * self.obstacle_size_col
+            obstacle.s_col = (random.random() * 0.8 + 0.2) * self.obstacle_size_row
             self.obstacles.append(obstacle)
 
     def getObstaclesAtTime(self, t) -> "list[Obstacle]":
@@ -79,14 +73,23 @@ class Obstacles:
         for obstacle in self.obstacles:
             p_row_at_t = obstacle.p_row + obstacle.v_row * t
             p_col_at_t = obstacle.p_col + obstacle.v_col * t
-
             cov = np.array([[obstacle.s_col,0],[0,obstacle.s_row]])
             expect = np.transpose(np.array([[p_col_at_t, p_row_at_t]]))
             pos = np.transpose(np.array([[col, row]]))
-            
             pdf = self.paper_pdf(cov, pos, expect) 
-            
-            # This is the wrong PDF - we need a 2-dimensional version!
-            #pdf = scipy.stats.norm(p_col_at_t, obstacle.s_col).pdf(col)
             pdfsum += pdf
         return pdfsum
+
+    def draw_map(self, col_resolution, row_resolution, t):
+        img = []
+        for col_index in range(0, col_resolution):
+            col = col_index / col_resolution * self.map_size_col
+            img_col = []
+            for row_index in range(0, row_resolution):
+                row = row_index / row_resolution * self.map_size_row
+                img_col.append(self.getPDF(col, row, t))
+            img.append(img_col)
+
+        fig, ax = plt.subplots(1)
+        ax.imshow(img)
+        plt.show()
