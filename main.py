@@ -32,7 +32,7 @@ def load_map(file_path, resolution_scale):
 if __name__ == "__main__":
 
     # seed the RNG so that results are repeatable
-    random.seed(2)
+    random.seed(5)
 
     # Load the map
     start = (250, 50)
@@ -43,21 +43,23 @@ if __name__ == "__main__":
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
     CC_RRT_planner.setProbabilityThreshold(0.0001)
+    CC_RRT_planner.setDoOriginalRewire(False)
+    CC_RRT_planner.setDoBetterRewire(True)
 
     # Obstacle data
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
-    Obstacle_info.setMaxVelocity(1)
+    Obstacle_info.setMaxVelocity(0)
     Obstacle_info.generateObstacles(20)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # Do first couple of frames, and then print results
     # This lets us abort early if the map is badly set up
-    iterations = 2
-    for i in range(0, iterations):
-        CC_RRT_planner.CC_RRT_star()
-    CC_RRT_planner.draw_map(0)
+    # iterations = 2
+    # for i in range(0, iterations):
+    #     CC_RRT_planner.CC_RRT_star()
+    # CC_RRT_planner.draw_map(0)
 
     # Do the normal bunch of iterations
     iterations = 1000
@@ -69,7 +71,10 @@ if __name__ == "__main__":
     # Use this line if doing a static obstacle (velocity=0) solution
     # CC_RRT_planner.draw_map(0)
 
+    # Draw a single image of the solution at time 0, with the graph
+    CC_RRT_planner.draw_map(0)
+
     # Save series of images
     # Use this if doing a dynamic obstacle solution
-    for t in range(1, 401, 10):
-        CC_RRT_planner.save_map(t, "output/time" + str(t) + ".png", 300)
+    # for t in range(1, 401, 10):
+    #     CC_RRT_planner.save_map(t, "output/time" + str(t) + ".png", 300, False)

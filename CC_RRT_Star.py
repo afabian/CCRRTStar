@@ -32,6 +32,8 @@ class CC_RRT_Star:
 
         self.goal_threshold = 10
         self.probability_threshold = 0
+        self.do_original_rewire = False
+        self.do_better_rewire = True
 
 
     def init_map(self):
@@ -42,6 +44,12 @@ class CC_RRT_Star:
         self.vertices.append(self.start)
     
 
+    def setDoBetterRewire(self, value):
+        self.do_better_rewire = value
+
+    def setDoOriginalRewire(self, value):
+        self.do_original_rewire = value
+        
     def setProbabilityThreshold(self, probability_threshold):
         self.probability_threshold = probability_threshold
 
@@ -80,6 +88,7 @@ class CC_RRT_Star:
 
 
     def line_crosses_moving_obstacles(self, node1: Node, node2: Node) -> bool:
+        # node1 must be the node from the earlier point in time
         steps = int(self.distance(node1, node2) * 1)
         for step in range(0, steps):
             temp_node = Node(
@@ -157,19 +166,39 @@ class CC_RRT_Star:
                         new_node.parent = node
                         new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
 
+    def rewire_solution(self):
+        node = self.goal
+        while node != self.start and node is not None:
+            self.rewire_solution_node(node)
+            node = node.parent
+
+    def rewire_solution_node(self, node):
+            parent = node.parent
+            if parent is not None:
+                    parent_parent = parent.parent
+                    if parent_parent is not None:
+                        parent_parent_edge_crosses_map_obstacles = self.line_crosses_map_obstacles(node, parent_parent)
+                        parent_parent_edge_crosses_moving_obstacles = self.line_crosses_moving_obstacles(parent_parent, node)
+                        parent_parent_edge_ok = not parent_parent_edge_crosses_map_obstacles and not parent_parent_edge_crosses_moving_obstacles
+                        if parent_parent_edge_ok:
+                            node.parent = parent_parent
+                            node.cost = parent_parent.cost + self.distance(node, parent_parent)
+                            self.rewire_solution_node(node)
+
+
     
-    def draw_map(self, t):
-        plt = self.get_map(t)
+    def draw_map(self, t, draw_graph=True):
+        plt = self.get_map(t, draw_graph)
         plt.show()
 
 
-    def save_map(self, t, filename, dpi):
-        plt = self.get_map(t)
+    def save_map(self, t, filename, dpi, draw_graph=True):
+        plt = self.get_map(t, draw_graph)
         plt.savefig(filename, dpi=dpi)
         plt.close('all')
 
 
-    def get_map(self, t):
+    def get_map(self, t, draw_graph=True):
         '''Visualization of the result
         '''
         # Create empty map
@@ -197,13 +226,13 @@ class CC_RRT_Star:
         ax.imshow(img)
 
         # Draw Trees or Sample points, if this is a static-time image
-        if t == 0:
+        if draw_graph:
             for node in self.vertices[1:-1]:
                 plt.plot(node.col, node.row, markersize=3, marker='o', color='w')
                 plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='w', linewidth=1)
         
         # Draw Final Path if found, if this is a static-time image
-        if t == 0:
+        if draw_graph:
             if self.found:
                 cur = self.goal
                 while cur.col != self.start.col or cur.row != self.start.row:
@@ -212,7 +241,7 @@ class CC_RRT_Star:
                     plt.plot(cur.col, cur.row, markersize=3, marker='o', color='g')
 
         # Draw the current point if this is a specific-time image
-        if t != 0:
+        if not draw_graph:
             point_at_time = self.get_point_at_time(t)
             plt.plot(point_at_time.col, point_at_time.row, markersize=10, marker='o', color='w')    
 
@@ -269,13 +298,15 @@ class CC_RRT_Star:
                 new_node.parent = nearest_node
                 new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
                 self.vertices.append(new_node)
-                neighbors = self.get_neighbors(new_node, 100)
-                self.rewire(new_node, neighbors)
+                neighbors = self.get_neighbors(new_node, 15)
+                if self.do_original_rewire:
+                    self.rewire(new_node, neighbors)
                 if self.distance(new_node, self.goal) < self.goal_threshold:
                     self.found = True
                     self.goal.parent = new_node.parent
                     self.goal.cost = new_node.cost
-
+                    if self.do_better_rewire:
+                        self.rewire_solution()
 
     def print_conclusion(self):
         # Output
