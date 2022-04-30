@@ -43,8 +43,10 @@ if __name__ == "__main__":
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
     CC_RRT_planner.setProbabilityThreshold(0.0001)
-    CC_RRT_planner.setDoOriginalRewire(False)
-    CC_RRT_planner.setDoBetterRewire(True)
+    CC_RRT_planner.setDoOriginalRewire(True)
+    CC_RRT_planner.setDoBetterRewire(False)
+    CC_RRT_planner.setUseIntelligentSampling(True)
+    CC_RRT_planner.setNeighborhoodSize(50)
 
     # Obstacle data
     Obstacle_info = Obstacles()
@@ -62,7 +64,7 @@ if __name__ == "__main__":
     # CC_RRT_planner.draw_map(0)
 
     # Do the normal bunch of iterations
-    iterations = 1000
+    iterations = 2000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
 

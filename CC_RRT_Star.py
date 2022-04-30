@@ -29,11 +29,15 @@ class CC_RRT_Star:
         self.goal = Node(goal[0], goal[1])
         self.vertices: list[Node] = []
         self.found = False
+        self.current_path:list[Node] = []
 
         self.goal_threshold = 10
         self.probability_threshold = 0
         self.do_original_rewire = False
         self.do_better_rewire = True
+        self.use_intelligent_sampling = False
+
+        self.neighborhood_size = 20
 
 
     def init_map(self):
@@ -49,10 +53,16 @@ class CC_RRT_Star:
 
     def setDoOriginalRewire(self, value):
         self.do_original_rewire = value
-        
+
+    def setUseIntelligentSampling(self, value):
+        self.use_intelligent_sampling = value
+
     def setProbabilityThreshold(self, probability_threshold):
         self.probability_threshold = probability_threshold
 
+    def setNeighborhoodSize(self, size):
+        self.neighborhood_size = size
+        
     def setObstacleSource(self, obstacles):
         # obstacles should be a class that contains a getPDF(x, y, t) method
         self.obstacles = obstacles
@@ -109,12 +119,36 @@ class CC_RRT_Star:
         return:
             point - the new point
         '''
+        if self.use_intelligent_sampling:
+            return self.get_new_point_intelligent_sampling(goal_bias)
+        else:
+            return self.get_new_point_normal(goal_bias)
+
+
+    def get_new_point_normal(self, goal_bias) -> Node:
         use_goal = random.random() < goal_bias
         if use_goal:
             return self.goal
         else:
             return Node(random.randint(0, self.size_row-1), random.randint(0, self.size_col-1))
-    
+
+
+    def get_new_point_intelligent_sampling(self, goal_bias) -> Node:
+        # randomly decide if we're going to do an intelligent or normal sample
+        use_biased_sample = (random.randint(0, 100) > 50) if self.found else False
+
+        # pick a node on the current solution path, and sample around that node
+        if use_biased_sample:
+            index = random.randint(1, len(self.current_path)-1)
+            center = self.current_path[index]
+            row = max(0, min(self.size_row-1, center.row + random.randint(-20, 20)))
+            col = max(0, min(self.size_col-1, center.col + random.randint(-20, 20)))
+            return Node(row, col)
+
+        # do normal sampling
+        else:
+            return self.get_new_point_normal(goal_bias)
+
 
     def get_nearest_node(self, node: Node) -> Node:
         '''Find the nearest node in self.vertices with respect to the new node
@@ -275,6 +309,14 @@ class CC_RRT_Star:
         return self.goal
 
 
+    def update_current_path(self):
+        self.current_path = []
+        node = self.goal
+        while node != self.start:
+            node = node.parent
+            if node != self.start: self.current_path.append(node)
+
+
     def CC_RRT_star(self, neighbor_size=20):
         '''RRT* search function
         arguments:
@@ -298,13 +340,14 @@ class CC_RRT_Star:
                 new_node.parent = nearest_node
                 new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
                 self.vertices.append(new_node)
-                neighbors = self.get_neighbors(new_node, 15)
+                neighbors = self.get_neighbors(new_node, self.neighborhood_size)
                 if self.do_original_rewire:
                     self.rewire(new_node, neighbors)
                 if self.distance(new_node, self.goal) < self.goal_threshold:
                     self.found = True
                     self.goal.parent = new_node.parent
                     self.goal.cost = new_node.cost
+                    self.update_current_path()
                     if self.do_better_rewire:
                         self.rewire_solution()
 
