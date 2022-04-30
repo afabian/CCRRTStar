@@ -45,7 +45,8 @@ if __name__ == "__main__":
     CC_RRT_planner.setProbabilityThreshold(0.0001)
     CC_RRT_planner.setDoOriginalRewire(True)
     CC_RRT_planner.setDoBetterRewire(False)
-    CC_RRT_planner.setUseIntelligentSampling(True)
+    CC_RRT_planner.setUseIntelligentSampling(False)
+    CC_RRT_planner.setUseInformed(True)
     CC_RRT_planner.setNeighborhoodSize(50)
 
     # Obstacle data
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
     Obstacle_info.setMaxVelocity(0)
-    Obstacle_info.generateObstacles(20)
+    Obstacle_info.generateObstacles(2)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # Do first couple of frames, and then print results
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     # CC_RRT_planner.draw_map(0)
 
     # Do the normal bunch of iterations
-    iterations = 2000
+    iterations = 1000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
 

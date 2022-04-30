@@ -16,6 +16,18 @@ class Node:
         self.parent = None    # parent node
         self.cost = 0.0       # cost
 
+    def __add__(self, other):
+        return Node(self.row + other.row, self.col + other.col)
+
+    def __sub__(self, other):
+        return Node(self.row - other.row, self.col - other.col)
+
+    def __mul__(self, scalar):
+        return Node(self.row * scalar, self.col * scalar)
+
+    def __truediv__(self, scalar):
+        return Node(self.row / scalar, self.col / scalar)
+
 
 # Class for CC_RRT_Star
 class CC_RRT_Star:
@@ -36,6 +48,7 @@ class CC_RRT_Star:
         self.do_original_rewire = False
         self.do_better_rewire = True
         self.use_intelligent_sampling = False
+        self.use_informed = False
 
         self.neighborhood_size = 20
 
@@ -56,6 +69,9 @@ class CC_RRT_Star:
 
     def setUseIntelligentSampling(self, value):
         self.use_intelligent_sampling = value
+
+    def setUseInformed(self, value):
+        self.use_informed = value
 
     def setProbabilityThreshold(self, probability_threshold):
         self.probability_threshold = probability_threshold
@@ -122,7 +138,58 @@ class CC_RRT_Star:
         if self.use_intelligent_sampling:
             return self.get_new_point_intelligent_sampling(goal_bias)
         else:
-            return self.get_new_point_normal(goal_bias)
+            if self.found or not self.use_informed:
+                return self.get_new_point_in_ellipsoid(goal_bias, self.goal.cost)
+            else:
+                return self.get_new_point_normal(goal_bias)
+
+
+    def get_new_point_in_ellipsoid(self, goal_bias, c_best):
+        '''Choose the goal or generate a random point in an ellipsoid
+           defined by start, goal and current best length of path
+        arguments:
+            goal_bias - the possibility of choosing the goal instead of a random point
+            c_best - the length of the current best path
+
+        return:
+            point - the new point
+        '''
+        # Select goal
+        if np.random.random() < goal_bias:
+            point = [self.goal.row, self.goal.col]
+
+        # Generate a random point in an ellipsoid
+        else:
+            # Compute the distance between start and goal - c_min
+            c_min = self.distance(self.start, self.goal)
+
+            # Calculate center of the ellipsoid - x_center
+            x_center = (self.start + self.goal) / 2
+
+            # Compute rotation matrix from elipse to world frame - C
+            theta = math.atan2(self.goal.col - self.start.col, self.goal.row - self.start.row)
+            c, s = np.cos(theta), np.sin(theta)
+            C = np.array(((c, -s), (s, c)))
+
+            # Compute diagonal matrix - L
+            r1 = c_best / 2
+            r2 = math.sqrt(c_best ** 2 - c_min ** 2) / 2
+            L = np.diag([r1, r2])
+
+            # Cast a sample from a unit ball - x_ball
+            row, col = np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+            while math.hypot(row, col) > 1:
+                row, col = np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+            x_ball = [row, col]
+            
+            # Map ball sample to the ellipsoid - x_rand
+            x_rand = np.dot(np.dot(C, L), x_ball)
+            x_rand += [x_center.row, x_center.col]
+            point = x_rand
+
+        row = max(0, min(self.size_row-1, int(point[0])))
+        col = max(0, min(self.size_col-1, int(point[1])))
+        return Node(row, col)
 
 
     def get_new_point_normal(self, goal_bias) -> Node:
