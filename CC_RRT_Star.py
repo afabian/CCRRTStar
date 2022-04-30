@@ -118,12 +118,13 @@ class CC_RRT_Star:
 
     def line_crosses_moving_obstacles(self, node1: Node, node2: Node) -> bool:
         # node1 must be the node from the earlier point in time
-        steps = int(self.distance(node1, node2) * 1)
+        steps = int(self.distance(node1, node2) * 0.5)
+        start_cost = self.path_cost(self.start, node1)
         for step in range(0, steps):
             temp_node = Node(
                 round(node1.row + (step/steps) * (node2.row-node1.row)),
                 round(node1.col + (step/steps) * (node2.col-node1.col)))
-            t = node1.cost + self.distance(node1, temp_node)
+            t = start_cost + self.distance(node1, temp_node)
             pdf = self.obstacles.getPDF(temp_node.col, temp_node.row, t)
             if pdf > self.probability_threshold:
                 return True
@@ -237,21 +238,6 @@ class CC_RRT_Star:
                 best_node = vertice
         return best_node
 
-
-    # def get_neighbors(self, node: Node, neighbor_size: float) -> "list[Node]":
-    #     '''Get the neighbors that are within the neighbor distance from the node
-    #     arguments:
-    #         node - a new node
-    #         neighbor_size - the neighbor distance
-
-    #     return:
-    #         neighbors - a list of neighbors that are within the neighbor distance 
-    #     '''
-    #     output = []
-    #     for vertice in self.vertices:
-    #         if self.distance(node, vertice) < neighbor_size:
-    #             output.append(vertice)
-    #     return output
 
     def get_neighbors(self, new_node, neighbor_size):
         '''Get the neighbors that is within the neighbor distance from the node
@@ -521,9 +507,9 @@ class CC_RRT_Star:
         new_node = self.get_new_point(0)
         nearest_node = self.get_nearest_node(new_node)
         if not self.line_crosses_map_obstacles(new_node, nearest_node):
-            if not self.line_crosses_moving_obstacles(new_node, nearest_node):
+            if not self.line_crosses_moving_obstacles(nearest_node, new_node):
                 new_node.parent = nearest_node
-                new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
+                new_node.cost = self.distance(new_node, new_node.parent)
                 self.vertices.append(new_node)
                 neighbors = self.get_neighbors(new_node, self.neighborhood_size)
                 if self.do_original_rewire:
