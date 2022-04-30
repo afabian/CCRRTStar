@@ -142,7 +142,7 @@ class CC_RRT_Star:
             return self.get_new_point_intelligent_sampling(goal_bias)
         else:
             if self.found and self.use_informed:
-                return self.get_new_point_in_ellipsoid(goal_bias, self.goal.cost)
+                return self.get_new_point_in_ellipsoid(goal_bias, self.path_cost(self.start, self.goal))
             else:
                 return self.get_new_point_normal(goal_bias)
 
