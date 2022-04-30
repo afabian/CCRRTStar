@@ -118,7 +118,7 @@ class CC_RRT_Star:
 
     def line_crosses_moving_obstacles(self, node1: Node, node2: Node) -> bool:
         # node1 must be the node from the earlier point in time
-        steps = int(self.distance(node1, node2) * 0.5)
+        steps = int(self.distance(node1, node2) * 1)
         start_cost = self.path_cost(self.start, node1)
         for step in range(0, steps):
             temp_node = Node(
@@ -290,7 +290,7 @@ class CC_RRT_Star:
         indices = np.argsort(np.array(costs))
         # check collision and connect the best node to the new node
         for i in indices:
-            if self.check_collision(new_node, neighbors[i]):
+            if self.check_collision(neighbors[i], new_node):
                 new_node.parent = neighbors[i]
                 new_node.cost = distances[i]
                 break
@@ -302,7 +302,7 @@ class CC_RRT_Star:
             # if new cost is lower
             # and there is no obstacles in between
             if self.path_cost(self.start, node) > new_cost and \
-               self.check_collision(node, new_node):
+               self.check_collision(new_node, node):
                 node.parent = new_node
                 node.cost = distances[i]
 
