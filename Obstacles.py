@@ -44,8 +44,8 @@ class Obstacles:
         self.obstacles = []
         for i in range(0, self.n_obstacles):
             obstacle = Obstacle()
-            obstacle.p_row = random.randrange(0, self.map_size_col)
-            obstacle.p_col = random.randrange(0, self.map_size_row)
+            obstacle.p_row = random.randrange(-self.map_size_col, 2*self.map_size_col)
+            obstacle.p_col = random.randrange(-self.map_size_row, 2*self.map_size_row)
             obstacle.v_row = (random.random() * 2 - 1) * self.max_velocity
             obstacle.v_col = (random.random() * 2 - 1) * self.max_velocity
             obstacle.s_row = (random.random() * 0.8 + 0.2) * self.obstacle_size_col
