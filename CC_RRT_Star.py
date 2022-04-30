@@ -4,9 +4,12 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import math
 import random
 import scipy
+from scipy import spatial
+
 
 # Class for each tree node
 class Node:
@@ -138,7 +141,7 @@ class CC_RRT_Star:
         if self.use_intelligent_sampling:
             return self.get_new_point_intelligent_sampling(goal_bias)
         else:
-            if self.found or not self.use_informed:
+            if self.found and self.use_informed:
                 return self.get_new_point_in_ellipsoid(goal_bias, self.goal.cost)
             else:
                 return self.get_new_point_normal(goal_bias)
@@ -235,20 +238,39 @@ class CC_RRT_Star:
         return best_node
 
 
-    def get_neighbors(self, node: Node, neighbor_size: float) -> "list[Node]":
-        '''Get the neighbors that are within the neighbor distance from the node
+    # def get_neighbors(self, node: Node, neighbor_size: float) -> "list[Node]":
+    #     '''Get the neighbors that are within the neighbor distance from the node
+    #     arguments:
+    #         node - a new node
+    #         neighbor_size - the neighbor distance
+
+    #     return:
+    #         neighbors - a list of neighbors that are within the neighbor distance 
+    #     '''
+    #     output = []
+    #     for vertice in self.vertices:
+    #         if self.distance(node, vertice) < neighbor_size:
+    #             output.append(vertice)
+    #     return output
+
+    def get_neighbors(self, new_node, neighbor_size):
+        '''Get the neighbors that is within the neighbor distance from the node
         arguments:
-            node - a new node
+            new_node - a new node
             neighbor_size - the neighbor distance
 
         return:
             neighbors - a list of neighbors that are within the neighbor distance 
         '''
-        output = []
-        for vertice in self.vertices:
-            if self.distance(node, vertice) < neighbor_size:
-                output.append(vertice)
-        return output
+        # Use kdtree to find the neighbors within neighbor size
+        samples = [[v.row, v.col] for v in self.vertices]
+        kdtree = spatial.cKDTree(samples)
+        ind = kdtree.query_ball_point([new_node.row, new_node.col], neighbor_size)
+        neighbors = [self.vertices[i] for i in ind]
+        # Remove the new_node itself
+        neighbors.remove(new_node)
+        return neighbors
+
 
 
     def rewire(self, new_node: Node, neighbors: "list[Node]"):
@@ -260,34 +282,130 @@ class CC_RRT_Star:
         Rewire the new node if connecting to a new neighbor node will give least cost.
         Rewire all the other neighbor nodes.
         '''
-        for node in neighbors:
-            if node.cost < new_node.parent.cost:
-                if not self.line_crosses_map_obstacles(node, new_node):
-                    if not self.line_crosses_moving_obstacles(node, new_node):
-                        new_node.parent = node
-                        new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
+        
+        # OLD AND BUSTED:
+        # for node in neighbors:
+        #     if node.cost < new_node.parent.cost:
+        #         if not self.line_crosses_map_obstacles(node, new_node):
+        #             if not self.line_crosses_moving_obstacles(node, new_node):
+        #                 new_node.parent = node
+        #                 new_node.cost = new_node.parent.cost + self.distance(new_node, new_node.parent)
 
+        # If no neighbors, skip
+        if neighbors == []:
+            return
+
+        # Compute the distance from the new node to the neighbor nodes
+        distances = [self.distance(new_node, node) for node in neighbors]
+
+        # Rewire the new node
+        # compute the least potential cost
+        costs = [d + self.path_cost(self.start, neighbors[i]) for i, d in enumerate(distances)]
+        indices = np.argsort(np.array(costs))
+        # check collision and connect the best node to the new node
+        for i in indices:
+            if self.check_collision(new_node, neighbors[i]):
+                new_node.parent = neighbors[i]
+                new_node.cost = distances[i]
+                break
+
+        # Rewire new_node's neighbors
+        for i, node in enumerate(neighbors):
+            # new cost
+            new_cost = self.path_cost(self.start, new_node) + distances[i]
+            # if new cost is lower
+            # and there is no obstacles in between
+            if self.path_cost(self.start, node) > new_cost and \
+               self.check_collision(node, new_node):
+                node.parent = new_node
+                node.cost = distances[i]
+
+
+    def path_cost(self, start_node, end_node):
+        '''Compute path cost starting from start node to end node
+        arguments:
+            start_node - path start node
+            end_node - path end node
+
+        return:
+            cost - path cost
+        '''
+        cost = 0
+        curr_node = end_node
+        while start_node.row != curr_node.row or start_node.col != curr_node.col:
+            # Keep tracing back until finding the start_node 
+            # or no path exists
+            parent = curr_node.parent
+            if parent is None:
+                print("Invalid Path")
+                return 0
+            cost += curr_node.cost
+            curr_node = parent
+        
+        return cost
+
+    def check_collision(self, a, b):
+        edge_crosses_map_obstacles = self.line_crosses_map_obstacles(a, b)
+        edge_crosses_moving_obstacles = self.line_crosses_moving_obstacles(a, b)
+        ok = not edge_crosses_map_obstacles and not edge_crosses_moving_obstacles
+        return ok
+
+    def debug_solution(self):
+        node = self.goal
+        print("Path from goal to start:")
+        sum = 0
+        while node is not None:
+            id = ""
+            if node == self.goal: id = "goal"
+            elif node == self.start: id = "start"
+            else: id = str(self.vertices.index(node))
+            sum += node.cost
+            print("Node " + id + " cost " + str(node.cost) + " cost_sum " + str(sum) + " row " + str(node.row) + " col " + str(node.col))
+            if node == self.start:
+                break
+            node = node.parent
+        
     def rewire_solution(self):
+        self.debug_solution()
+        # rewire
         node = self.goal
         while node != self.start and node is not None:
             self.rewire_solution_node(node)
             node = node.parent
+        # fix node costs
+        node = self.goal
+        while node != self.start and node is not None:
+            node.cost = self.distance(node, node.parent)
+            node = node.parent
+        self.debug_solution()
 
     def rewire_solution_node(self, node):
             parent = node.parent
             if parent is not None:
                     parent_parent = parent.parent
                     if parent_parent is not None:
-                        parent_parent_edge_crosses_map_obstacles = self.line_crosses_map_obstacles(node, parent_parent)
-                        parent_parent_edge_crosses_moving_obstacles = self.line_crosses_moving_obstacles(parent_parent, node)
-                        parent_parent_edge_ok = not parent_parent_edge_crosses_map_obstacles and not parent_parent_edge_crosses_moving_obstacles
+                        parent_parent_edge_ok = self.check_collision(parent_parent, node)
                         if parent_parent_edge_ok:
                             node.parent = parent_parent
-                            node.cost = parent_parent.cost + self.distance(node, parent_parent)
+                            node.cost = self.distance(node, parent_parent)
                             self.rewire_solution_node(node)
 
 
-    
+    def save_spreadsheet(self, t):
+        rows = []
+        for index in range(1, len(self.vertices)-2):
+            node = self.vertices[index]
+            col = {
+                'index': index,
+                'row': node.row,
+                'col': node.col,
+                'cost': node.cost,
+                'parent': self.vertices.index(node.parent)
+            }
+            rows.append(col)
+        rows_df = pd.DataFrame(rows)
+        rows_df.to_excel('vertices.xlsx')
+
     def draw_map(self, t, draw_graph=True):
         plt = self.get_map(t, draw_graph)
         plt.show()
@@ -339,7 +457,7 @@ class CC_RRT_Star:
                 while cur.col != self.start.col or cur.row != self.start.row:
                     plt.plot([cur.col, cur.parent.col], [cur.row, cur.parent.row], color='g', linewidth=3)
                     cur = cur.parent
-                    plt.plot(cur.col, cur.row, markersize=3, marker='o', color='g')
+                    plt.plot(cur.col, cur.row, markersize=5, marker='o', color='g')
 
         # Draw the current point if this is a specific-time image
         if not draw_graph:
@@ -412,17 +530,21 @@ class CC_RRT_Star:
                     self.rewire(new_node, neighbors)
                 if self.distance(new_node, self.goal) < self.goal_threshold:
                     self.found = True
-                    self.goal.parent = new_node.parent
-                    self.goal.cost = new_node.cost
+                    self.goal.parent = new_node
+                    self.goal.cost = self.distance(self.goal, new_node)
                     self.update_current_path()
-                    if self.do_better_rewire:
-                        self.rewire_solution()
+
+
+    def finish(self):
+        if self.do_better_rewire:
+            self.rewire_solution()
+
 
     def print_conclusion(self):
         # Output
         if self.found:
             steps = len(self.vertices) - 2
-            length = self.goal.cost
+            length = self.path_cost(self.start, self.goal)
             print("It took %d nodes to find the current path" %steps)
             print("The path length is %.2f" %length)
         else:

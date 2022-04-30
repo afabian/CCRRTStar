@@ -44,9 +44,9 @@ if __name__ == "__main__":
     CC_RRT_planner.init_map()
     CC_RRT_planner.setProbabilityThreshold(0.0001)
     CC_RRT_planner.setDoOriginalRewire(True)
-    CC_RRT_planner.setDoBetterRewire(False)
+    CC_RRT_planner.setDoBetterRewire(True)
     CC_RRT_planner.setUseIntelligentSampling(False)
-    CC_RRT_planner.setUseInformed(True)
+    CC_RRT_planner.setUseInformed(False)
     CC_RRT_planner.setNeighborhoodSize(50)
 
     # Obstacle data
@@ -69,6 +69,8 @@ if __name__ == "__main__":
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
 
+    CC_RRT_planner.finish()
+
     # Print results
     CC_RRT_planner.print_conclusion()
     # Use this line if doing a static obstacle (velocity=0) solution
@@ -76,6 +78,8 @@ if __name__ == "__main__":
 
     # Draw a single image of the solution at time 0, with the graph
     CC_RRT_planner.draw_map(0)
+
+    CC_RRT_planner.save_spreadsheet(0)
 
     # Save series of images
     # Use this if doing a dynamic obstacle solution
