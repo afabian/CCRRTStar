@@ -54,8 +54,9 @@ if __name__ == "__main__":
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
-    Obstacle_info.setMaxVelocity(5)
-    Obstacle_info.generateObstacles(30)
+    Obstacle_info.setObstacleFieldSizeCoeff(1.0)
+    Obstacle_info.setMaxVelocity(0)
+    Obstacle_info.generateObstacles(8)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # Do first couple of frames, and then print results
@@ -66,28 +67,24 @@ if __name__ == "__main__":
     # CC_RRT_planner.draw_map(0)
 
     start_time = time.time()
-
-    # Do the normal bunch of iterations
-    iterations = 700
+    iterations = 1000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
-
     CC_RRT_planner.finish()
-
     end_time = time.time()
 
-    print("Computation Time: " + str(end_time - start_time))
-    
     # Print results
+
+    print("Computation Time: " + str(end_time - start_time))
     CC_RRT_planner.print_conclusion()
 
     # Draw a single image of the solution at time 0, with the graph
-    #CC_RRT_planner.draw_map(0)
-    #CC_RRT_planner.save_spreadsheet(0)
+    CC_RRT_planner.draw_map(0)
+    CC_RRT_planner.save_spreadsheet(0)
 
     # Save series of images
     # Use this if doing a dynamic obstacle solution
-    count = 0
-    for t in range(1, 301, 4):
-        CC_RRT_planner.save_map(t, "output/time" + str(count).zfill(3) + ".png", 300, False)
-        count += 1
+    # count = 0
+    # for t in range(1, 301, 4):
+    #     CC_RRT_planner.save_map(t, "output/time" + str(count).zfill(3) + ".png", 300, False)
+    #     count += 1

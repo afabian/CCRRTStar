@@ -27,6 +27,7 @@ class Obstacles:
         self.max_velocity = 0
         self.n_obstacles = 0
         self.obstacles:list[Obstacle] = []
+        self.obstacle_field_size_coeff = 1.0
 
     def setMapSize(self, map_size_col, map_size_row):
         self.map_size_col = map_size_col
@@ -36,6 +37,9 @@ class Obstacles:
         self.obstacle_size_col = obstacle_size_col
         self.obstacle_size_row = obstacle_size_row
 
+    def setObstacleFieldSizeCoeff(self, obstacle_field_size_coeff):
+        self.obstacle_field_size_coeff = obstacle_field_size_coeff
+
     def setMaxVelocity(self, max_velocity):
         self.max_velocity = max_velocity
 
@@ -44,8 +48,9 @@ class Obstacles:
         self.obstacles = []
         for i in range(0, self.n_obstacles):
             obstacle = Obstacle()
-            obstacle.p_row = random.randrange(-self.map_size_col, 2*self.map_size_col)
-            obstacle.p_col = random.randrange(-self.map_size_row, 2*self.map_size_row)
+            # The obstacle field can be bigger than the map, to allow for obstacles that start off the map and then move in over time
+            obstacle.p_row = random.randrange(0 - (self.map_size_col * (self.obstacle_field_size_coeff - 1)), self.map_size_col * self.obstacle_field_size_coeff)
+            obstacle.p_col = random.randrange(0 - (self.map_size_row * (self.obstacle_field_size_coeff - 1)), self.map_size_row * self.obstacle_field_size_coeff)
             obstacle.v_row = (random.random() * 2 - 1) * self.max_velocity
             obstacle.v_col = (random.random() * 2 - 1) * self.max_velocity
             obstacle.s_row = (random.random() * 0.8 + 0.2) * self.obstacle_size_col
