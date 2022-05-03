@@ -49,6 +49,7 @@ if __name__ == "__main__":
     CC_RRT_planner.setUseIntelligentSampling(True)
     CC_RRT_planner.setUseInformed(True)
     CC_RRT_planner.setNeighborhoodSize(50)
+    iterations = 1000
 
     # Obstacle data
     Obstacle_info = Obstacles()
@@ -67,7 +68,6 @@ if __name__ == "__main__":
     # CC_RRT_planner.draw_map(0)
 
     start_time = time.time()
-    iterations = 1000
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
     CC_RRT_planner.finish()
