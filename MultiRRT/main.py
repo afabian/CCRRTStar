@@ -7,6 +7,7 @@ from Obstacles import Obstacles
 import sys
 import matplotlib.pyplot as plt
 import random
+import time
 
 def load_map(file_path, resolution_scale):
     ''' Load map from an image and return a 2D binary numpy array
@@ -32,7 +33,7 @@ def load_map(file_path, resolution_scale):
 if __name__ == "__main__":
 
     # seed the RNG so that results are repeatable
-    random.seed(2)
+    random.seed(5)
 
     # Load the map
     start = (250, 50)
@@ -43,33 +44,47 @@ if __name__ == "__main__":
     CC_RRT_planner = CC_RRT_Star(map_array, start, goal)
     CC_RRT_planner.init_map()
     CC_RRT_planner.setProbabilityThreshold(0.0001)
+    CC_RRT_planner.setDoOriginalRewire(True)
+    CC_RRT_planner.setDoBetterRewire(True)
+    CC_RRT_planner.setUseIntelligentSampling(True)
+    CC_RRT_planner.setUseInformed(True)
+    CC_RRT_planner.setNeighborhoodSize(50)
+    iterations = 1000
 
     # Obstacle data
     Obstacle_info = Obstacles()
     Obstacle_info.setMapSize(CC_RRT_planner.size_col, CC_RRT_planner.size_row)
     Obstacle_info.setObstacleSize(100, 100)
-    Obstacle_info.setMaxVelocity(1)
-    Obstacle_info.generateObstacles(20)
+    Obstacle_info.setObstacleFieldSizeCoeff(1.0)
+    Obstacle_info.setMaxVelocity(0)
+    Obstacle_info.generateObstacles(8)
     CC_RRT_planner.setObstacleSource(Obstacle_info)
 
     # Do first couple of frames, and then print results
     # This lets us abort early if the map is badly set up
-    iterations = 2
-    for i in range(0, iterations):
-        CC_RRT_planner.CC_RRT_star()
-    CC_RRT_planner.draw_map(0)
+    # iterations = 2
+    # for i in range(0, iterations):
+    #     CC_RRT_planner.CC_RRT_star()
+    # CC_RRT_planner.draw_map(0)
 
-    # Do the normal bunch of iterations
-    iterations = 1000
+    start_time = time.time()
     for i in range(0, iterations):
         CC_RRT_planner.CC_RRT_star()
+    CC_RRT_planner.finish()
+    end_time = time.time()
 
     # Print results
+
+    print("Computation Time: " + str(end_time - start_time))
     CC_RRT_planner.print_conclusion()
-    # Use this line if doing a static obstacle (velocity=0) solution
-    # CC_RRT_planner.draw_map(0)
+
+    # Draw a single image of the solution at time 0, with the graph
+    CC_RRT_planner.draw_map(0)
+    CC_RRT_planner.save_spreadsheet(0)
 
     # Save series of images
     # Use this if doing a dynamic obstacle solution
-    for t in range(1, 401, 10):
-        CC_RRT_planner.save_map(t, "output/time" + str(t) + ".png", 300)
+    # count = 0
+    # for t in range(1, 301, 4):
+    #     CC_RRT_planner.save_map(t, "output/time" + str(count).zfill(3) + ".png", 300, False)
+    #     count += 1

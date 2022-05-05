@@ -51,7 +51,7 @@ class Obstacles:
             obstacle.s_row = (random.random() * 0.8 + 0.2) * self.obstacle_size_col
             obstacle.s_col = (random.random() * 0.8 + 0.2) * self.obstacle_size_row
             self.obstacles.append(obstacle)
-
+        return self.obstacles
     def getObstaclesAtTime(self, t) -> "list[Obstacle]":
         output = []
         for obstacle in self.obstacles:
